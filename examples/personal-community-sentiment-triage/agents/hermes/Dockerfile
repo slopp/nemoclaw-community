@@ -140,7 +140,8 @@ RUN if [ "$ENABLE_NEMO_FLOW" = "1" ]; then \
 # Hermes v2026.4.13+ auto-detects HTTPS_PROXY and skips fallback-IP
 # transport when a proxy is present. The sandbox proxy chain
 # (decode-proxy → OpenShell L7 proxy) handles credential placeholder
-# rewriting and hostname-based policy enforcement. No monkey patch needed.
+# rewriting and hostname-based policy enforcement. The Python preload
+# rewrites Slack SDK-shaped placeholders before HTTPS serialization.
 ENV HERMES_TELEGRAM_DISABLE_FALLBACK_IPS=1 \
     GH_TOKEN=openshell:resolve:env:GITHUB_TOKEN
 
@@ -151,10 +152,16 @@ COPY agents/hermes/plugin/ /opt/nemoclaw-hermes-plugin/
 # Install under /usr/local/lib/ so Landlock's read_only /usr rule permits access.
 COPY agents/hermes/bridges/ /usr/local/lib/nemoclaw-bridges/
 
-# Copy config generation script and URL-decode proxy
+# Copy config generation script and Slack helper shims.
+# Install under /usr/local/lib so Landlock's read_only /usr rule permits
+# the sandbox process to read both the decode proxy and preload files.
 COPY agents/hermes/generate-config.ts /opt/nemoclaw-generate-config.ts
-COPY agents/hermes/decode-proxy.py /usr/local/bin/nemoclaw-decode-proxy
-RUN chmod 755 /usr/local/bin/nemoclaw-decode-proxy
+RUN mkdir -p /usr/local/lib/nemoclaw-slack-shims
+COPY agents/hermes/decode-proxy.py /usr/local/lib/nemoclaw-slack-shims/decode-proxy.py
+COPY agents/hermes/discord-preload/ /usr/local/lib/nemoclaw-slack-shims/discord-preload/
+RUN chmod 755 /usr/local/lib/nemoclaw-slack-shims/decode-proxy.py \
+    && find /usr/local/lib/nemoclaw-slack-shims/discord-preload -type d -exec chmod 755 {} + \
+    && find /usr/local/lib/nemoclaw-slack-shims/discord-preload -type f -exec chmod 444 {} +
 
 # NOTE: This example removes the upstream NemoClaw `COPY nemoclaw-blueprint/`
 # step. Nothing in the Hermes runtime (start.sh, plugin/, bridges/, sidecars/,

@@ -119,9 +119,13 @@ function main(): void {
   const platformsConfig: Record<string, Record<string, unknown>> = {};
   for (const ch of msgChannels) {
     if (ch in TOKEN_ENV) {
+      const tokenPlaceholder =
+        ch === "slack" && TOKEN_ENV[ch] === "SLACK_BOT_TOKEN"
+          ? "xoxb-OPENSHELL-RESOLVE-ENV-SLACK_BOT_TOKEN"
+          : `openshell:resolve:env:${TOKEN_ENV[ch]}`;
       const pCfg: Record<string, unknown> = {
         enabled: true,
-        token: `openshell:resolve:env:${TOKEN_ENV[ch]}`,
+        token: tokenPlaceholder,
       };
       // allowed_users in config.yaml is not read by the gateway — see ALLOWED_USERS_ENV below
       platformsConfig[ch] = pCfg;
@@ -160,10 +164,18 @@ function main(): void {
   ];
   for (const ch of msgChannels) {
     if (ch in TOKEN_ENV) {
-      envLines.push(`${TOKEN_ENV[ch]}=openshell:resolve:env:${TOKEN_ENV[ch]}`);
+      if (ch === "slack" && TOKEN_ENV[ch] === "SLACK_BOT_TOKEN") {
+        envLines.push("SLACK_BOT_TOKEN=xoxb-OPENSHELL-RESOLVE-ENV-SLACK_BOT_TOKEN");
+      } else {
+        envLines.push(`${TOKEN_ENV[ch]}=openshell:resolve:env:${TOKEN_ENV[ch]}`);
+      }
     }
     if (ch in EXTRA_TOKEN_ENV) {
-      envLines.push(`${EXTRA_TOKEN_ENV[ch]}=openshell:resolve:env:${EXTRA_TOKEN_ENV[ch]}`);
+      if (ch === "slack" && EXTRA_TOKEN_ENV[ch] === "SLACK_APP_TOKEN") {
+        envLines.push("SLACK_APP_TOKEN=xapp-OPENSHELL-RESOLVE-ENV-SLACK_APP_TOKEN");
+      } else {
+        envLines.push(`${EXTRA_TOKEN_ENV[ch]}=openshell:resolve:env:${EXTRA_TOKEN_ENV[ch]}`);
+      }
     }
   }
   // Write allowed-user IDs so gateway _is_user_authorized reads them from env.
