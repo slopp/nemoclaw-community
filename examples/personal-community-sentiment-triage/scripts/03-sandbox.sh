@@ -201,6 +201,42 @@ if [[ "$READY" != "1" ]]; then
 fi
 echo "  Sandbox reported ready; detached local create stream."
 
+# Docker does not copy arbitrary host /etc/hosts entries into the sandbox. On
+# hosts that reach the configured HTTPS inference endpoint through a host-local
+# TLS tunnel, keep the public upstream hostname but resolve it to OpenShell's
+# host bridge inside the container.
+INFERENCE_BASE_URL="${NEMOCLAW_ENDPOINT_URL:-${OPENAI_BASE_URL:-https://integrate.api.nvidia.com/v1}}"
+INFERENCE_HOST="$(
+  INFERENCE_BASE_URL="$INFERENCE_BASE_URL" python3 -c \
+    'import os, urllib.parse; print(urllib.parse.urlparse(os.environ["INFERENCE_BASE_URL"]).hostname or "")'
+)"
+INFERENCE_REQUIRES_HOST_TUNNEL="${NEMOCLAW_ENDPOINT_URL_REQUIRES_HOST_TUNNEL:-}"
+case "${INFERENCE_REQUIRES_HOST_TUNNEL,,}" in
+  1|true|yes|on) INFERENCE_REQUIRES_HOST_TUNNEL=1 ;;
+  *) INFERENCE_REQUIRES_HOST_TUNNEL=0 ;;
+esac
+if [[ -n "$INFERENCE_HOST" && "$INFERENCE_REQUIRES_HOST_TUNNEL" == "1" ]] && command -v docker >/dev/null; then
+  SANDBOX_CONTAINER_ID="$(
+    docker ps -q \
+      --filter "label=openshell.ai/managed-by=openshell" \
+      --filter "label=openshell.ai/sandbox-name=$SANDBOX_NAME" \
+    | head -n 1
+  )"
+  if [[ -n "$SANDBOX_CONTAINER_ID" ]]; then
+    docker exec -u root \
+      -e "NEMOCLAW_ENDPOINT_HOST=$INFERENCE_HOST" \
+      "$SANDBOX_CONTAINER_ID" /bin/sh -lc \
+      'host_ip="$(getent hosts host.openshell.internal | awk "{print \$1; exit}")";
+       if [ -z "$host_ip" ]; then
+         echo "Warning: host.openshell.internal did not resolve inside the sandbox" >&2;
+       elif ! grep -q "[[:space:]]${NEMOCLAW_ENDPOINT_HOST}$" /etc/hosts; then
+         printf "\n%s %s\n" "$host_ip" "$NEMOCLAW_ENDPOINT_HOST" >> /etc/hosts;
+       fi'
+  else
+    echo "Warning: could not find Docker container for sandbox $SANDBOX_NAME; $INFERENCE_HOST host resolution override not applied" >&2
+  fi
+fi
+
 # ── Re-apply policy (matches nemoclaw onboard's two-stage flow) ────────
 # Without this, network rules from the staged policy may not be activated
 # even though they were passed at create time. Symptom: L7 proxy denies

@@ -360,6 +360,8 @@ sandbox, e.g. `find /tmp/atif -type f -mtime +7 -delete`.
 - **(Optional)** If your network performs TLS interception (e.g. an
   SSL-inspecting proxy), place the inspection CA certificate(s) as `.crt`
   files in the example-root `certs/` directory before running `bring-up.sh`.
+  The same applies when `NEMOCLAW_ENDPOINT_URL` points at an HTTPS endpoint
+  served by a host-local tunnel with a private/mkcert root.
   Otherwise leave it empty. See [`certs/README.md`](certs/README.md) for
   details.
 
@@ -449,6 +451,7 @@ unless you remove the compose volumes.
 | `OPENSHELL_GATEWAY_ENDPOINT` | auto (`https://127.0.0.1:17670` for `openshell`, `http://127.0.0.1:17670` for `snap-docker`) | Override the local gateway endpoint if you registered it under a different URL. |
 | `NEMOCLAW_MODEL` | `nvidia/nemotron-3-super-120b-a12b` | Inference model passed to `openshell inference set`. |
 | `NEMOCLAW_ENDPOINT_URL` | `https://integrate.api.nvidia.com/v1` | Upstream base URL for the `compatible-endpoint` provider. (`OPENAI_BASE_URL` is also accepted as a fallback.) |
+| `NEMOCLAW_ENDPOINT_URL_REQUIRES_HOST_TUNNEL` | `false` | Set to `true` when `NEMOCLAW_ENDPOINT_URL` is served by a host-local TLS tunnel under its public hostname, e.g. `https://inference-api.nvidia.com/v1`. This preserves the public URL host while adding a sandbox `/etc/hosts` line such as `<host-bridge-ip> inference-api.nvidia.com`. Requires the tunnel's root CA in `certs/*.crt` before sandbox build. |
 | `COMPATIBLE_API_KEY` | (none) | Inference API key. Mirrors NemoClaw's `REMOTE_PROVIDER_CONFIG.custom`. (`OPENAI_API_KEY` is also accepted.) |
 | `GITHUB_TOKEN` | (none) | Optional GitHub token for authenticated live REST reads. Also feeds the optional host GitHub mirror. |
 | `GITHUB_READONLY_REPO` | `NVIDIA/OpenShell` | The only repo allowed by the live GitHub REST policy, formatted as `owner/repo`. Recreate the sandbox after changing it. |
