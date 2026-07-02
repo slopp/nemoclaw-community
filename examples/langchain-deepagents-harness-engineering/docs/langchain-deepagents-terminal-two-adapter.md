@@ -11,7 +11,7 @@ in this example so the adapter is self-contained.
 ## Shape
 
 ```
-hep langchain terminal-two
+hep langchain-term2 run
   -> DeepAgentsTerminalTwoAdapter
      -> Terminal Two runner custom agent:
         hep.deepagents_terminal_two_agent:DeepAgentsTerminalTwoAgent
@@ -36,7 +36,7 @@ uv sync --extra terminal-two
 export OPENAI_API_KEY="$NVIDIA_API_KEY"
 export OPENAI_BASE_URL="https://nemotron-ultra.apps.inference-tme.nvidia.com/v1"
 
-uv run hep langchain terminal-two \
+uv run hep langchain-term2 run \
   --model "openai:nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" \
   --profile examples/deepagents/profiles/nvidia_nemotron_3_ultra_base.py \
   --task terminal-bench/regex-log \
@@ -51,7 +51,7 @@ The command writes a Ralph-compatible JSON report and leaves the raw Terminal Tw
 ## Optimizer Use
 
 The adapter is intentionally shaped so Ralph can use it without changing the optimizer loop.
-The CLI exposes this as `hep langchain ralph-terminal-two`, and the equivalent Python wiring is:
+The CLI exposes this as `hep langchain-term2 ralph`, and the equivalent Python wiring is:
 
 ```python
 from hep.adapters.deepagents_terminal_two import DeepAgentsTerminalTwoAdapter

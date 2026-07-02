@@ -8,9 +8,11 @@ from __future__ import annotations
 import typer
 
 from hep.cli.langchain import app as langchain_app
+from hep.cli.langchain_term2 import app as langchain_term2_app
 
-app = typer.Typer(name="hep", help="Harness Engineering Playground — automated harness profile improvement.")
+app = typer.Typer(name="hep", help="Harness Engineering Playground - automated harness profile improvement.")
 app.add_typer(langchain_app)
+app.add_typer(langchain_term2_app)
 
 
 if __name__ == "__main__":

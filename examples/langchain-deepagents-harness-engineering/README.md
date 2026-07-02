@@ -11,7 +11,7 @@ the stock Deep Agents pytest eval suite and a Terminal Two sandboxed eval suite.
   targets the Deep Agents pytest eval suite, and `DeepAgentsTerminalTwoAdapter` targets sandboxed
   Terminal Two tasks through the same profile interface.
 - **`Optimizer`** — a technique for searching over config edits to fix failing evals.
-  - **`RalphLoopOptimizer`** (`hep langchain ralph`) proposes a fix via a bounded
+  - **`RalphLoopOptimizer`** (`hep langchain ralph`, `hep langchain-term2 ralph`) proposes a fix via a bounded
     tool-using deep-agent session built on LangChain's `deepagents` — the model gets real
     `read_file`/`edit_file`/`grep`/`glob` tools scoped to an isolated workspace, plus read-only
     access to the real SDK and eval-suite source trees, so it can investigate instead of guessing
@@ -85,7 +85,7 @@ Watch it iteratively rediscover the kind of tuning already checked into deepagen
 
 ## Quickstart: Terminal Two Eval Suite
 
-Use `hep langchain terminal-two` when you want the same Deep Agents profile surface but a Terminal
+Use `hep langchain-term2 run` when you want the same Deep Agents profile surface but a Terminal
 Two task runner and sandbox instead of the Deep Agents pytest eval suite:
 
 ```bash
@@ -96,7 +96,7 @@ uv sync --extra terminal-two
 export OPENAI_API_KEY="$NVIDIA_API_KEY"
 export OPENAI_BASE_URL="https://nemotron-ultra.apps.inference-tme.nvidia.com/v1"
 
-uv run hep langchain terminal-two \
+uv run hep langchain-term2 run \
   --model "openai:nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" \
   --profile examples/deepagents/profiles/nvidia_nemotron_3_ultra_base.py \
   --task terminal-bench/regex-log \
@@ -113,10 +113,18 @@ token summary fields, and the raw Terminal Two `job_dir`. See
 [docs/langchain-deepagents-terminal-two-adapter.md](docs/langchain-deepagents-terminal-two-adapter.md)
 for the adapter shape and how to wire it into `RalphLoopOptimizer`.
 
-You can also run the same optimizer loop against Terminal Two directly:
+The CLI shape is `hep <target-framework/eval-suite> <action-or-optimizer>`. That keeps `ralph`
+as the optimizer command for both eval suites:
 
 ```bash
-uv run hep langchain ralph-terminal-two \
+uv run hep langchain ralph       # Deep Agents pytest eval suite
+uv run hep langchain-term2 ralph # Terminal Two eval suite
+```
+
+Run the Terminal Two optimizer path directly:
+
+```bash
+uv run hep langchain-term2 ralph \
   --model "openai:nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" \
   --profile examples/deepagents/profiles/nvidia_nemotron_3_ultra_base.py \
   --task terminal-bench/regex-log \
@@ -157,7 +165,8 @@ src/hep/
 │                                    purpose so the hard dependency's absence fails fast and
 │                                    cleanly at the CLI boundary
 └── cli/
-    └── langchain.py        — pytest and Terminal Two Deep Agents commands
+    ├── langchain.py        — Deep Agents pytest eval-suite commands
+    └── langchain_term2.py  — Deep Agents Terminal Two eval-suite commands
 tests/unit_tests/           — adapter/optimizer tests against a FakeAdapter
 ```
 
@@ -168,7 +177,8 @@ under the relevant `cli/<framework>.py` group. It can reuse any existing adapter
 
 **New eval suite for the same framework** — implement another `HarnessAdapter`, translate that
 suite's native job artifacts into HEP's `passed`/`failed`/`failures` report shape, then register a
-small CLI command that wires it to `RalphLoopOptimizer`.
+Typer group named for the framework+suite pair. Commands underneath that group are the actions or
+optimizers, e.g. `hep langchain ralph` and `hep langchain-term2 ralph`.
 
 **New target framework** — implement `HarnessAdapter`, add a `cli/<framework>.py` Typer group
 registering it against `RalphLoopOptimizer` or any other existing `Optimizer`.

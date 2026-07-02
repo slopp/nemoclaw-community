@@ -17,6 +17,7 @@ Anthropic API. Expect all tests to pass before doing anything else.
 ```bash
 uv run hep --help
 uv run hep langchain ralph --help
+uv run hep langchain-term2 ralph --help
 ```
 
 Confirms the CLI wires up correctly (Typer app registration, adapter/optimizer imports) without
@@ -114,7 +115,7 @@ Requires:
 - `OPENAI_API_KEY`/`NVIDIA_API_KEY` and `OPENAI_BASE_URL` for the model under evaluation
 
 ```bash
-uv run hep langchain terminal-two \
+uv run hep langchain-term2 run \
   --model "openai:nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B" \
   --profile examples/deepagents/profiles/nvidia_nemotron_3_ultra_base.py \
   --task terminal-bench/regex-log \
